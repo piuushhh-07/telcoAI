@@ -118,3 +118,29 @@ def predict(customer: CustomerInput):
         "model_used": metadata["winner"],
     }
 
+@app.get("/stats")
+def stats():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM predictions")
+    total = cur.fetchone()[0]
+
+    if total == 0:
+        conn.close()
+        return {"total_predictions": 0, "high_risk_pct": 0, "avg_probability": 0, "risk_breakdown": {}}
+
+    cur.execute("SELECT AVG(churn_probability) FROM predictions")
+    avg_prob = cur.fetchone()[0]
+
+    cur.execute("SELECT risk_level, COUNT(*) FROM predictions GROUP BY risk_level")
+    breakdown = dict(cur.fetchall())
+
+    high_risk_pct = (breakdown.get("High", 0) / total) * 100
+    conn.close()
+
+    return {
+        "total_predictions": total,
+        "high_risk_pct": round(high_risk_pct, 1),
+        "avg_probability": round(avg_prob, 4),
+        "risk_breakdown": breakdown,
+    }
