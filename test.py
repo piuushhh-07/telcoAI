@@ -42,3 +42,24 @@ logreg_proba = logreg_pipeline.predict_proba(X_test)[:, 1]
 print("\n=== Logistic Regression (baseline) ===")
 print(classification_report(y_test, logreg_preds, target_names=["Stay", "Churn"]))
 print(f"ROC-AUC: {roc_auc_score(y_test, logreg_proba):.3f}")
+
+scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
+
+xgb_pipeline = Pipeline([
+    ("preprocess", preprocessor),
+    ("model", XGBClassifier(
+        n_estimators=200,
+        max_depth=4,
+        learning_rate=0.05,
+        scale_pos_weight=scale_pos_weight,
+        eval_metric="logloss",
+        random_state=42,
+    )),
+])
+xgb_pipeline.fit(X_train, y_train)
+xgb_preds = xgb_pipeline.predict(X_test)
+xgb_proba = xgb_pipeline.predict_proba(X_test)[:, 1]
+
+print("\n=== XGBoost (production candidate) ===")
+print(classification_report(y_test, xgb_preds, target_names=["Stay", "Churn"]))
+print(f"ROC-AUC: {roc_auc_score(y_test, xgb_proba):.3f}")
