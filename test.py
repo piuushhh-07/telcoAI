@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, roc_auc_score
 from xgboost import XGBClassifier
 
-df = pd.read_csv("data/telco.csv")
+df = pd.read_csv("telco.csv")
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 df["TotalCharges"] = df["TotalCharges"].fillna(0)
 
@@ -63,3 +63,26 @@ xgb_proba = xgb_pipeline.predict_proba(X_test)[:, 1]
 print("\n=== XGBoost (production candidate) ===")
 print(classification_report(y_test, xgb_preds, target_names=["Stay", "Churn"]))
 print(f"ROC-AUC: {roc_auc_score(y_test, xgb_proba):.3f}")
+
+logreg_auc = roc_auc_score(y_test, logreg_proba)
+xgb_auc = roc_auc_score(y_test, xgb_proba)
+
+winner_name = "xgboost" if xgb_auc > logreg_auc else "logistic_regression"
+winner_pipeline = xgb_pipeline if xgb_auc > logreg_auc else logreg_pipeline
+
+print(f"\n>>> Winner: {winner_name} (AUC {max(xgb_auc, logreg_auc):.3f} vs {min(xgb_auc, logreg_auc):.3f})")
+
+joblib.dump(logreg_pipeline, "models/logreg_pipeline.pkl")
+joblib.dump(xgb_pipeline, "models/xgb_pipeline.pkl")
+
+metadata = {
+    "winner": winner_name,
+    "logreg_auc": float(logreg_auc),
+    "xgb_auc": float(xgb_auc),
+    "feature_columns": list(X.columns),
+    "numeric_features": numeric_features,
+    "categorical_features": categorical_features,
+}
+joblib.dump(metadata, "models/metadata.pkl")
+
+print("\nSaved: logreg_pipeline.pkl, xgb_pipeline.pkl, metadata.pkl")
