@@ -10,3 +10,19 @@ from sklearn.metrics import classification_report, roc_auc_score
 from xgboost import XGBClassifier
 
 df = pd.read_csv("data/telco.csv")
+df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+df["TotalCharges"] = df["TotalCharges"].fillna(0)
+
+df = df.drop(columns=["customerID"])
+df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
+
+X = df.drop(columns=["Churn"])
+y = df["Churn"]
+
+numeric_features = ["tenure", "MonthlyCharges", "TotalCharges"]
+categorical_features = [c for c in X.columns if c not in numeric_features]
+
+preprocessor = ColumnTransformer(transformers=[
+    ("num", StandardScaler(), numeric_features),
+    ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+])
