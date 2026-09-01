@@ -30,3 +30,15 @@ preprocessor = ColumnTransformer(transformers=[
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
+
+logreg_pipeline = Pipeline([
+    ("preprocess", preprocessor),
+    ("model", LogisticRegression(max_iter=1000, class_weight="balanced")),
+])
+logreg_pipeline.fit(X_train, y_train)
+logreg_preds = logreg_pipeline.predict(X_test)
+logreg_proba = logreg_pipeline.predict_proba(X_test)[:, 1]
+
+print("\n=== Logistic Regression (baseline) ===")
+print(classification_report(y_test, logreg_preds, target_names=["Stay", "Churn"]))
+print(f"ROC-AUC: {roc_auc_score(y_test, logreg_proba):.3f}")
