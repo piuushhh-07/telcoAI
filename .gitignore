@@ -3,3 +3,4 @@ __pycache__/
 backend/predictions.db
 backend/server.log
 .env
+venv/
